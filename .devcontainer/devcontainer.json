@@ -1,0 +1,92 @@
+// =============================================================================
+// devcontainer.json — CloudTask AI SaaS (Aula 1)
+// -----------------------------------------------------------------------------
+// Sobe a aplicação em container e abre o VS Code dentro dele.
+// O aluno desenvolve cloud-native desde o primeiro dia: Linux + Python 3.11 +
+// usuário não-root, exatamente igual ao que rodará em EKS na Aula 8.
+//
+// Como usar:
+//   1. Instalar extensão "Dev Containers" (ms-vscode-remote.remote-containers)
+//   2. Abrir esta pasta no VS Code
+//   3. F1 → "Dev Containers: Reopen in Container"
+//
+// Evolução nas próximas aulas:
+//   * Aula 3 (PostgreSQL): este arquivo trocará "build" por "dockerComposeFile"
+//     apontando para docker-compose.yml com serviço `db` (Postgres 16,
+//     compatível com Amazon RDS for PostgreSQL).
+//   * Aula 4 (.env / config): adicionaremos "runArgs": ["--env-file=.env"]
+//     ou o equivalente via compose.
+// =============================================================================
+{
+  "name": "CloudTask AI SaaS — dev (semana 1)",
+
+  // Aula 1: usamos build direto no Dockerfile (target=dev).
+  "build": {
+    "context": "..",
+    "dockerfile": "../Dockerfile",
+    "target": "dev"
+  },
+
+  // Pasta aberta dentro do container.
+  // O Dev Containers monta automaticamente o repo em /workspaces/<pasta>.
+  // Como nosso Dockerfile usa WORKDIR=/app, montamos lá também para o
+  // hot-reload do uvicorn pegar as alterações de `app/`.
+  "workspaceFolder": "/app",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+
+  // Usuário não-root criado no Dockerfile.
+  "remoteUser": "appuser",
+
+  // Sobrescreve o CMD do Dockerfile e mantém o container vivo enquanto
+  // o VS Code estiver conectado. O uvicorn é iniciado manualmente pelo
+  // aluno (via terminal integrado ou debugger), o que facilita o ensino.
+  "overrideCommand": true,
+
+  // Features = "add-ons" oficiais instalados dentro do container.
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  // Extensões e configurações do VS Code aplicadas automaticamente.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "charliermarsh.ruff",
+        "tamasfe.even-better-toml",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/home/appuser/.local/bin/python",
+        "python.terminal.activateEnvironment": false,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.ruff": "explicit",
+          "source.organizeImports.ruff": "explicit"
+        },
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/.pytest_cache": true,
+          "**/.ruff_cache": true
+        }
+      }
+    }
+  },
+
+  // Roda uma vez, logo após o container subir pela primeira vez.
+  "postCreateCommand": "python -V && pip list",
+
+  // Portas encaminhadas automaticamente para o host.
+  "forwardPorts": [8000, 5678],
+  "portsAttributes": {
+    "8000": { "label": "FastAPI",  "onAutoForward": "notify" },
+    "5678": { "label": "debugpy",  "onAutoForward": "silent" }
+  }
+}

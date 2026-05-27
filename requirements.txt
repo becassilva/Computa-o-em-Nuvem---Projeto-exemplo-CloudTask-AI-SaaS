@@ -1,0 +1,5 @@
+# Dependências de produção (mínimas para a Aula 1).
+# Em aulas futuras adicionamos: sqlalchemy, psycopg2-binary, boto3, etc.
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+pydantic>=2.7,<3.0

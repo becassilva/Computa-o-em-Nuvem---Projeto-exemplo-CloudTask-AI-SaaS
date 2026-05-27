@@ -162,7 +162,12 @@ cython_debug/
 # ===== CloudTask AI SaaS =====
 
 # IDEs / editores
-.vscode/
+# Ignora .vscode/, mas permite arquivos compartilhados úteis no repositório.
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
 .idea/
 *.swp
 *.swo
