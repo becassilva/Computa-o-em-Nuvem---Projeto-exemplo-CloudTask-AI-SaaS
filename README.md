@@ -5,9 +5,9 @@
 
 <!-- Título e breve descrição do repositório -->
 <div align="center">
-  <h1>CloudTask AI SaaS — Aula 2</h1>
-  <p><b>Branch <code>semana-01-fastapi-docker</code> — estado pós Aula 2.</b></p>
-  <p>API FastAPI + Dockerfile multi-target + <b>Docker Compose</b> + devcontainer (agora consumindo o compose).</p>
+  <h1>CloudTask AI SaaS — Aula 3</h1>
+  <p><b>Branch <code>semana-02-rds-vpc-seguranca</code> — estado pós Aula 3.</b></p>
+  <p>API FastAPI + <b>PostgreSQL</b> + CRUD de tarefas, em Docker Compose e devcontainer.</p>
 </div>
 
 <p align="center">
@@ -16,109 +16,127 @@
   <a href="https://fastapi.tiangolo.com/" title="FastAPI"><img src="https://github.com/get-icon/geticon/raw/master/icons/fastapi.svg" alt="FastAPI" height="21px"></a>
   +
   <a href="https://www.docker.com/" title="Docker"><img src="https://github.com/get-icon/geticon/raw/master/icons/docker-icon.svg" alt="Docker" height="21px"></a>
+  +
+  <a href="https://www.postgresql.org/" title="PostgreSQL"><img src="https://github.com/get-icon/geticon/raw/master/icons/postgresql.svg" alt="PostgreSQL" height="21px"></a>
+  +
+  <a href="https://www.sqlalchemy.org/" title="SQLAlchemy">SQLAlchemy</a>
 </p>
 
 ## O que foi entregue nesta aula
 
-- `docker-compose.yml` com o serviço `api` (target `dev` do Dockerfile, hot-reload, volume `.:/app`).
-- `docker-compose.prod.yml` (override) simulando a imagem `prod` localmente.
-- `.devcontainer/devcontainer.json` **migrado** de `build` direto para `dockerComposeFile` — o compose é agora a única fonte de verdade do ambiente.
-- README atualizado.
+- Serviço **`db` (PostgreSQL 16-alpine)** no `docker-compose.yml` — mesma engine do Amazon RDS, com healthcheck e `depends_on`.
+- Camada de dados em `app/db/`:
+  - `database.py` — engine, `SessionLocal`, `Base`, dependência `get_db`.
+  - `models.py` — modelo `Task` + enums `TaskStatus` / `TaskPriority`.
+  - `schemas.py` — `TaskCreate`, `TaskUpdate`, `TaskRead` (Pydantic, com exemplos no Swagger).
+- `app/api/routes_tasks.py` — **CRUD completo** de tarefas.
+- Criação automática das tabelas no startup (via `lifespan`).
+- Versão da API: **`0.2.0`** (início da Semana 2).
 
-> **Por que migrar o devcontainer para o compose já na Aula 2?**
-> Na Aula 3 vamos adicionar o serviço `db` (PostgreSQL 16, compatível com Amazon RDS for PostgreSQL) ao mesmo compose. Com a migração feita agora, **nada muda** no `devcontainer.json` na Aula 3 — basta editar o compose, e o aluno ganha o banco automaticamente ao reabrir o devcontainer.
+> Tudo com **comentários didáticos** explicando motivo, impacto e risco de cada decisão.
 
-## O que continua igual (Aula 1)
+## Endpoints
 
-- `app/main.py` + `app/api/routes_health.py` (endpoints `GET /` e `GET /health`).
-- `app/schemas.py` (modelos Pydantic com exemplos para o Swagger).
-- `Dockerfile` multi-target (`dev` / `prod`).
-- `.dockerignore`, `requirements.txt`, `requirements-dev.txt`.
-- `pyproject.toml` (ruff/pytest/mypy).
-- `.vscode/launch.json` para debug.
+| Método | Caminho            | Descrição                              |
+| ------ | ------------------ | -------------------------------------- |
+| GET    | `/`                | Metadados da aplicação.                |
+| GET    | `/health`          | Liveness probe.                        |
+| POST   | `/tasks`           | Criar tarefa (201).                    |
+| GET    | `/tasks`           | Listar tarefas (paginação `skip`/`limit`). |
+| GET    | `/tasks/{task_id}` | Obter tarefa por id (404 se não existe). |
+| PUT    | `/tasks/{task_id}` | Atualizar tarefa (parcial).            |
+| DELETE | `/tasks/{task_id}` | Remover tarefa (204).                  |
+| GET    | `/docs`            | Swagger UI.                            |
+
+### Modelo `Task`
+
+```text
+id           int        (gerado pelo banco)
+title        str        (obrigatório, 1–200 chars)
+description  str | null  (até 2000 chars)
+status       enum        pending | in_progress | done   (default pending)
+priority     enum        low | medium | high            (default medium)
+created_at   datetime    (carimbado pelo banco)
+updated_at   datetime    (atualizado pelo banco a cada PUT)
+```
 
 ## Pré-requisitos
 
-| Ferramenta              | Versão mínima | Para quê                                         |
-| ----------------------- | ------------- | ------------------------------------------------ |
-| Git                     | 2.40          | Clonar e trocar de branches.                     |
-| Docker Desktop          | 4.30          | Construir e rodar a imagem (compose v2 incluso). |
-| VS Code                 | 1.90          | Editor de código.                                |
-| Extensão Dev Containers | 0.380         | Abrir o projeto dentro do container.             |
+| Ferramenta              | Versão mínima | Para quê                       |
+| ----------------------- | ------------- | ------------------------------ |
+| Docker Desktop          | 4.30          | API + PostgreSQL em containers |
+| VS Code + Dev Containers| 1.90 / 0.380  | Abrir o projeto no container   |
+
+> Nunca usou terminal/Docker? Veja [`docs/aws-academy-setup.md`](docs/aws-academy-setup.md).
 
 ## Como rodar
 
 ### 1) Devcontainer no VS Code (recomendado)
 
 ```text
-1. Abra a pasta do repositório no VS Code.
-2. F1 → "Dev Containers: Reopen in Container".
-3. Aguarde o compose subir o serviço `api` (1ª vez ~1 min).
-4. No terminal integrado:  uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-5. Abra http://localhost:8000/docs no navegador do host.
+1. F1 → "Dev Containers: Rebuild and Reopen in Container".
+   (Rebuild porque o compose agora tem o serviço `db`.)
+2. O VS Code sobe API + PostgreSQL juntos.
+3. Terminal integrado:  uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+4. Abra http://localhost:8000/docs
 ```
 
-### 2) Docker Compose direto (sem VS Code)
+### 2) Docker Compose direto
 
 ```bash
-# dev (target dev, hot-reload, código montado)
-docker compose up --build
-# em background: docker compose up -d --build
-
-# acompanhar logs
-docker compose logs -f api
-
-# parar
-docker compose down
-
-# simular produção
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+docker compose up --build           # sobe API + PostgreSQL
+curl http://localhost:8000/tasks    # deve responder []
+docker compose down                 # para (mantém os dados)
+docker compose down -v              # para e ZERA o banco
 ```
 
-### 3) Docker puro (também funciona)
+> ⚠️ Se a porta **5432** já estiver ocupada na sua máquina, defina
+> `POSTGRES_PORT=5433` (ou outra livre) no seu `.env` antes de subir.
+
+### Testando o CRUD pelo terminal
 
 ```bash
-docker build --target dev  -t cloudtask-api:dev  .
-docker build --target prod -t cloudtask-api:prod .
-docker run --rm -p 8000:8000 cloudtask-api:prod
+# criar
+curl -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Minha primeira tarefa","priority":"high"}'
+
+# listar
+curl http://localhost:8000/tasks
+
+# atualizar (id 1)
+curl -X PUT http://localhost:8000/tasks/1 \
+  -H "Content-Type: application/json" -d '{"status":"done"}'
+
+# remover (id 1)
+curl -X DELETE http://localhost:8000/tasks/1
 ```
 
-## Endpoints
+## Conexão com o banco
 
-| Método | Caminho           | Descrição                                    |
-| ------ | ----------------- | -------------------------------------------- |
-| GET    | `/`               | Metadados da aplicação.                      |
-| GET    | `/health`         | Liveness probe (`{"status": "ok"}`).         |
-| GET    | `/docs`           | Swagger UI interativo (Markdown rico).       |
-| GET    | `/redoc`          | ReDoc.                                       |
-| GET    | `/openapi.json`   | Especificação OpenAPI.                       |
+`DATABASE_URL` (lida do ambiente; default no compose):
 
-## Comandos úteis de Compose
-
-```bash
-docker compose ps                       # lista serviços rodando
-docker compose exec api sh              # shell no container da API
-docker compose logs -f api              # tail dos logs
-docker compose build --no-cache api     # rebuild forçado
-docker compose down -v                  # para tudo + remove volumes nomeados
+```text
+postgresql+psycopg2://cloudtask:cloudtask@db:5432/cloudtask
 ```
+
+O host `db` é o nome do serviço no Compose. Esta **mesma URL** servirá para o
+Amazon RDS na nuvem — só muda o host/usuário/senha (via Secret). Por isso
+usamos PostgreSQL 16 local, igual ao RDS.
 
 ## O que vem na próxima aula
 
-- **Aula 3 (branch `semana-02-rds-vpc-seguranca`):**
-  - Adicionar `postgres:16-alpine` como serviço `db` ao `docker-compose.yml` (compatível com Amazon RDS for PostgreSQL).
-  - SQLAlchemy + Pydantic schemas + modelo `Task`.
-  - CRUD completo de tarefas (`POST/GET/PUT/DELETE /tasks`).
-  - Devcontainer **não muda** — só ganha o `db` automaticamente.
+- **Aula 4 (mesma branch):** `app/core/config.py` (`.env` via pydantic-settings),
+  `GET /health/ready` (checa o PostgreSQL), **HTTPS** (FORCE_HTTPS, proxy-headers,
+  HSTS, mkcert local) e docs de VPC/IAM/segurança. Ver [issue #4](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/4).
 
 ## Referências
 
-- Issue da aula: [#2 — Aula 2](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/2)
-- Lista completa de tarefas: [`docs/TAREFAS.md`](docs/TAREFAS.md)
+- Issue da aula: [#3 — Aula 3](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/3)
+- Lista de tarefas: [`docs/TAREFAS.md`](docs/TAREFAS.md)
 - Guia geral: [`docs/HOW_TO_USE.md`](docs/HOW_TO_USE.md)
-- Roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md)
-- **Configuração do zero (terminal, Docker, AWS CLI, Learner Lab):** [`docs/aws-academy-setup.md`](docs/aws-academy-setup.md)
-- Exemplos didáticos: [`exemplos/dockerfile/`](exemplos/dockerfile/)
+- Setup do zero: [`docs/aws-academy-setup.md`](docs/aws-academy-setup.md)
+- SQLAlchemy 2.0: <https://docs.sqlalchemy.org/en/20/>
 
 ## Licença
 

@@ -1,5 +1,16 @@
-# Dependências de produção (mínimas para a Aula 1).
-# Em aulas futuras adicionamos: sqlalchemy, psycopg2-binary, boto3, etc.
+# Dependências de produção.
+# A cada aula adicionamos só o necessário, para o aluno ver o que cada peça traz.
+
+# --- Aula 1: API web ---
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30,<1.0
 pydantic>=2.7,<3.0
+
+# --- Aula 3: banco de dados (PostgreSQL) ---
+# sqlalchemy: ORM — mapeia classes Python <-> tabelas SQL.
+sqlalchemy>=2.0,<3.0
+# psycopg2-binary: driver que o SQLAlchemy usa para falar com o PostgreSQL.
+# Usamos a versão "-binary" porque ela já vem compilada (não precisa de
+# compilador C nem libpq-dev na imagem). Em produção crítica, alguns preferem
+# o psycopg2 (sem -binary) compilado; para fins didáticos, -binary é mais simples.
+psycopg2-binary>=2.9,<3.0

@@ -32,3 +32,11 @@ services:
       APP_ENV: production
       LOG_LEVEL: INFO
     restart: always
+
+  db:
+    # Em "produção" (mesmo simulada) o banco NÃO deve ficar exposto na rede.
+    # `!reset null` remove o mapeamento de porta herdado do base — o Postgres
+    # fica acessível apenas internamente, pela rede do Compose.
+    # RISCO de expor: qualquer um na rede do host poderia tentar conectar no DB.
+    ports: !reset null
+    restart: always

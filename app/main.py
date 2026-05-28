@@ -27,10 +27,14 @@ URLs úteis após subir:
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
+
 from fastapi import FastAPI, status
 
 from app import __version__
-from app.api import routes_health
+from app.api import routes_health, routes_tasks
+from app.db.database import Base, engine
 from app.schemas import RootResponse
 
 # ---------------------------------------------------------------------------
@@ -41,8 +45,9 @@ APP_DESCRIPTION = """\
 Mini **SaaS de gerenciamento de tarefas** construído ao longo da disciplina
 **Computação em Nuvem** (N-CPU / UNINTER).
 
-Esta é a versão da **Semana 1** (versão `0.1.0`): FastAPI mínimo, Dockerfile
-multi-target, Docker Compose e devcontainer do VS Code.
+Esta é a versão da **Semana 2** (versão `0.2.0`): além da base da Semana 1
+(FastAPI + Docker + devcontainer), adicionamos **PostgreSQL** e o **CRUD de
+tarefas** (`/tasks`).
 
 ### Status do projeto
 
@@ -51,8 +56,8 @@ multi-target, Docker Compose e devcontainer do VS Code.
 
 | Semana | Branch                          | Tema                                                          |
 | -----: | :------------------------------ | :------------------------------------------------------------ |
-| <kbd>1</kbd> ← *você está aqui* | `semana-01-fastapi-docker`      | FastAPI mínimo, Docker e Docker Compose, devcontainer         |
-|      2 | `semana-02-rds-vpc-seguranca`   | PostgreSQL + CRUD, config `.env`, docs de VPC/IAM             |
+|      1 | `semana-01-fastapi-docker`      | FastAPI mínimo, Docker e Docker Compose, devcontainer         |
+| <kbd>2</kbd> ← *você está aqui* | `semana-02-rds-vpc-seguranca`   | PostgreSQL + CRUD, config `.env`, HTTPS, docs de VPC/IAM      |
 |      3 | `semana-03-s3-kubernetes`       | Upload S3 (com fallback local), Kubernetes local (Kind)       |
 |      4 | `semana-04-eks-aws`             | Build/push para ECR, deploy no EKS                            |
 |      5 | `semana-05-custos-nosql-logs`   | HPA + teste de carga + Cost Explorer, eventos com DynamoDB    |
@@ -62,10 +67,11 @@ multi-target, Docker Compose e devcontainer do VS Code.
 
 - <span style="color:#0ea5e9">**meta**</span> — metadados da aplicação.
 - <span style="color:#16a34a">**health**</span> — endpoints de saúde para orquestradores.
+- <span style="color:#f59e0b">**tasks**</span> — CRUD de tarefas (PostgreSQL).
 
 ### Links úteis
 
-- [Issue mais recente (Aula 2)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/2)
+- [Issue mais recente (Aula 3)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/3)
 - [Roadmap completo](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/blob/main/docs/ROADMAP.md)
 - [Lista de tarefas (`docs/TAREFAS.md`)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/blob/main/docs/TAREFAS.md)
 
@@ -73,11 +79,12 @@ multi-target, Docker Compose e devcontainer do VS Code.
 <summary><b>Como rodar localmente</b></summary>
 
 ```bash
-# 1. Subir tudo via Docker Compose
+# 1. Subir API + PostgreSQL via Docker Compose
 docker compose up --build
 
 # 2. Testar
 curl http://localhost:8000/health
+curl http://localhost:8000/tasks
 ```
 
 Ou abra o projeto no VS Code e use `F1 → "Dev Containers: Reopen in Container"`.
@@ -126,12 +133,33 @@ print(resposta.json()["docs"])  # /docs
 
 
 # ---------------------------------------------------------------------------
+# Ciclo de vida da aplicação (startup / shutdown).
+#
+# No startup, criamos as tabelas no banco caso ainda não existam.
+#
+# POR QUÊ `create_all` aqui (e não uma ferramenta de migração como Alembic):
+#   é o jeito mais simples e didático para a Aula 3. `create_all` apenas CRIA
+#   tabelas que faltam — não altera tabelas já existentes.
+# RISCO/LIMITAÇÃO: se um dia você mudar uma coluna, `create_all` NÃO migra o
+#   schema. Em projeto real usa-se Alembic. Mencionamos isso para o aluno saber
+#   que esta é uma simplificação consciente de ensino.
+# ---------------------------------------------------------------------------
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
+    """Cria as tabelas no startup e cede o controle à aplicação."""
+    Base.metadata.create_all(bind=engine)
+    yield
+    # (Nada a desfazer no shutdown nesta aula.)
+
+
+# ---------------------------------------------------------------------------
 # Instância principal do FastAPI.
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="CloudTask AI SaaS",
     description=APP_DESCRIPTION,
     version=__version__,
+    lifespan=lifespan,
     contact={
         "name": "Prof. Guilherme Patriota",
         "url": "https://github.com/guipatriota",
@@ -146,11 +174,16 @@ app = FastAPI(
             "name": "health",
             "description": "Endpoints de saúde usados por Docker, Kubernetes e Load Balancers.",
         },
+        {
+            "name": "tasks",
+            "description": "CRUD de tarefas, persistidas em PostgreSQL.",
+        },
     ],
 )
 
-# Registra os endpoints do módulo `routes_health` na aplicação.
+# Registra os routers na aplicação.
 app.include_router(routes_health.router)
+app.include_router(routes_tasks.router)
 
 
 @app.get(

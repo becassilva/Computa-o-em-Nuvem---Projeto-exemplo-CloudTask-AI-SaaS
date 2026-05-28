@@ -13,8 +13,8 @@ Política de versionamento
 A versão é incrementada **a cada nova semana** (branch ``semana-0N-...``)
 no formato ``0.N.0``:
 
-* Semana 1 → ``0.1.0`` *(estado atual)*
-* Semana 2 → ``0.2.0``
+* Semana 1 → ``0.1.0``
+* Semana 2 → ``0.2.0`` *(estado atual)*
 * Semana 3 → ``0.3.0``
 * Semana 4 → ``0.4.0``
 * Semana 5 → ``0.5.0``
@@ -36,4 +36,4 @@ Attributes:
 
 # Atualize SOMENTE ao criar uma nova branch de semana. Aulas dentro da
 # mesma semana mantêm a versão.
-__version__: str = "0.1.0"
+__version__: str = "0.2.0"
