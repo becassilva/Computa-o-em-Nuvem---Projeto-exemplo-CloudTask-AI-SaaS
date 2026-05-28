@@ -5,9 +5,9 @@
 
 <!-- Título e breve descrição do repositório -->
 <div align="center">
-  <h1>CloudTask AI SaaS — Aula 4</h1>
-  <p><b>Branch <code>semana-02-rds-vpc-seguranca</code> — estado pós Aula 4.</b></p>
-  <p>API FastAPI + PostgreSQL + CRUD, agora com <b>config por <code>.env</code></b>, <b>readiness probe</b> e <b>HTTPS</b>.</p>
+  <h1>CloudTask AI SaaS — Semana 2 (Aulas 3 e 4)</h1>
+  <p><b>Branch <code>semana-02-rds-vpc-seguranca</code> — cobre as Aulas 3 e 4.</b></p>
+  <p>API FastAPI + <b>PostgreSQL + CRUD</b> (Aula 3) e <b>config por <code>.env</code>, readiness probe e HTTPS</b> (Aula 4).</p>
 </div>
 
 <p align="center">
@@ -22,7 +22,21 @@
   <a href="https://www.sqlalchemy.org/" title="SQLAlchemy">SQLAlchemy</a>
 </p>
 
-## O que foi entregue nesta aula (Aula 4)
+## O que foi feito nesta semana
+
+Esta branch contém **as duas aulas da Semana 2**. Abaixo, o que cada aula entregou.
+
+### Aula 3 — Persistência com PostgreSQL e CRUD de tarefas
+
+- Serviço **`db` (PostgreSQL 16-alpine)** no `docker-compose.yml` — mesma engine do Amazon RDS, com healthcheck e `depends_on: service_healthy`.
+- Camada de dados em `app/db/`:
+  - `database.py` — engine, `SessionLocal`, `Base`, dependência `get_db`.
+  - `models.py` — modelo `Task` + enums `TaskStatus` / `TaskPriority` (timestamps carimbados pelo banco).
+  - `schemas.py` — `TaskCreate`, `TaskUpdate`, `TaskRead` (Pydantic, com exemplos no Swagger).
+- `app/api/routes_tasks.py` — **CRUD completo** (`POST/GET/GET{id}/PUT/DELETE /tasks`).
+- Criação automática das tabelas no startup (via `lifespan`).
+
+### Aula 4 — Config por ambiente, segurança, HTTPS e readiness
 
 - `app/core/config.py` — configuração central com **pydantic-settings** (lê `.env` / variáveis de ambiente, valida tipos).
 - `GET /health/ready` — **readiness probe** que faz `SELECT 1` no PostgreSQL (`200` pronto / `503` banco fora). `GET /health` permanece **liveness puro** (não toca no banco).
@@ -33,12 +47,13 @@
   - `HTTPSRedirectMiddleware` só no caso sem proxy (`FORCE_HTTPS=true` e `BEHIND_PROXY=false`).
 - Docs de segurança: `docs/https-tls.md`, `docs/aws-networking.md`, `docs/security-model.md`.
 - `.env.example` cobre `FORCE_HTTPS`, `BEHIND_PROXY`, `TRUSTED_HOSTS`.
-- Versão: **`0.2.0`** (mesma Semana 2).
 
-### Já existia (Aula 3)
-- Serviço `db` (PostgreSQL 16-alpine) no compose; camada `app/db/` (database, models, schemas); CRUD `/tasks`; tabelas criadas no startup.
+Versão da API ao fim da semana: **`0.2.0`**.
 
-> Tudo com **comentários didáticos** explicando motivo, impacto e risco de cada decisão.
+### Base herdada da Semana 1
+FastAPI mínimo (`/`, `/health`), Dockerfile multi-target, Docker Compose e devcontainer já vieram da Semana 1 (branch `semana-01-fastapi-docker`).
+
+> Todo o código vem com **comentários didáticos** explicando motivo, impacto e risco de cada decisão.
 
 ## Endpoints
 
