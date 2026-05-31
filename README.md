@@ -78,6 +78,22 @@ docker-outside-of-docker.
 
 ## Como rodar
 
+> ⚠️ **Ao mudar de semana (branch), faça REBUILD do devcontainer.**
+> A imagem do container é um snapshot congelado das dependências da branch em que
+> foi construída. Cada semana acrescenta libs novas em `requirements.txt` (ex.:
+> `boto3` na Semana 3, `kubernetes` na Semana 6, etc.). Sem rebuild, o `uvicorn`
+> vai quebrar com `ModuleNotFoundError` ao tentar importar uma lib que ainda não
+> foi instalada e o Swagger sai do ar.
+>
+> No VS Code: `F1` → **Dev Containers: Rebuild and Reopen in Container**.
+>
+> Para saber se precisa rebuild antes de trocar de branch:
+> ```bash
+> git diff <branch-atual> <branch-destino> -- requirements.txt requirements-dev.txt requirements-test.txt Dockerfile docker-compose.yml
+> ```
+> Se mostrar diff → rebuild. Entre **aulas da mesma semana**, geralmente código
+> apenas — não precisa rebuild.
+
 ### Devcontainer (recomendado)
 `F1` → "Dev Containers: Reopen in Container". A API sobe sozinha em
 `http://localhost:8000/docs`.
