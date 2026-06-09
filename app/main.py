@@ -48,10 +48,16 @@ APP_DESCRIPTION = """\
 Mini **SaaS de gerenciamento de tarefas** construído ao longo da disciplina
 **Computação em Nuvem** (N-CPU / UNINTER).
 
-Esta é a versão da **Semana 3** (versão `0.3.0`): além da base das semanas
-anteriores, adicionamos **upload de arquivos** (`/uploads`) com dois backends
-intercambiáveis — **Amazon S3** ou disco **local** — e Kubernetes local com
-**Kind**.
+Esta é a versão da **Semana 4** (versão `0.4.0`): sobre a base das semanas
+anteriores (CRUD, `.env`, **upload S3/local** e **Kubernetes local com Kind**),
+levamos a aplicação **para a nuvem AWS** — publicando a imagem no **Amazon ECR**
+e fazendo deploy no **Amazon EKS** (Kubernetes gerenciado) com **Service
+LoadBalancer**.
+
+> 📌 **Aula combinada Semanas 3 + 4.** Como a Semana 3 não teve aula, os
+> experimentos das duas semanas são feitos juntos: primeiro o Kubernetes
+> **local (Kind)** da Semana 3, depois **ECR + EKS** na nuvem da Semana 4.
+> Roteiro: [`docs/praticas/14-roteiro-aula-3-e-4.md`](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/blob/main/docs/praticas/14-roteiro-aula-3-e-4.md).
 
 ### Status do projeto
 
@@ -62,8 +68,8 @@ intercambiáveis — **Amazon S3** ou disco **local** — e Kubernetes local com
 | -----: | :------------------------------ | :------------------------------------------------------------ |
 |      1 | `semana-01-fastapi-docker`      | FastAPI mínimo, Docker e Docker Compose, devcontainer         |
 |      2 | `semana-02-rds-vpc-seguranca`   | PostgreSQL + CRUD, config `.env`, HTTPS, docs de VPC/IAM      |
-| <kbd>3</kbd> ← *você está aqui* | `semana-03-s3-kubernetes`       | Upload S3 (com fallback local), Kubernetes local (Kind)       |
-|      4 | `semana-04-eks-aws`             | Build/push para ECR, deploy no EKS                            |
+|      3 | `semana-03-s3-kubernetes`       | Upload S3 (com fallback local), Kubernetes local (Kind)       |
+| <kbd>4</kbd> ← *você está aqui* | `semana-04-eks-aws`             | Build/push para ECR, deploy no EKS (aula combinada com a Semana 3) |
 |      5 | `semana-05-custos-nosql-logs`   | HPA + teste de carga + Cost Explorer, eventos com DynamoDB    |
 |      6 | `semana-06-cdk-final`           | AWS CDK (S3, ECR, VPC), docs finais e checklist LGPD          |
 
@@ -76,7 +82,7 @@ intercambiáveis — **Amazon S3** ou disco **local** — e Kubernetes local com
 
 ### Links úteis
 
-- [Issue mais recente (Aula 5)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/5)
+- [Issues do projeto (Aulas 7 e 8 — ECR/EKS)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues)
 - [Roadmap completo](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/blob/main/docs/ROADMAP.md)
 - [Lista de tarefas (`docs/TAREFAS.md`)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/blob/main/docs/TAREFAS.md)
 
