@@ -552,6 +552,9 @@ curl http://$ELB_DNS:8000/health/ready
 
 ### 8.1. Criar segredo
 
+O JSON do `--secret-string` tem aspas, então o quoting **muda por shell**:
+
+**Linux/macOS (bash)** — aspas simples seguram o JSON inteiro:
 ```bash
 aws secretsmanager create-secret \
   --name cloudtask/prod \
@@ -562,6 +565,22 @@ aws secretsmanager create-secret \
     "AWS_REGION":"us-east-1",
     "S3_BUCKET_NAME":"cloudtask-uploads-..."
   }'
+```
+
+**Windows (PowerShell)** — use here-string `@'...'@` (literal, não expande `$`):
+```powershell
+$secret = @'
+{
+  "DATABASE_URL":"postgresql://cloudtask:SENHA@HOST:5432/cloudtask",
+  "SECRET_KEY":"...",
+  "AWS_REGION":"us-east-1",
+  "S3_BUCKET_NAME":"cloudtask-uploads-..."
+}
+'@
+aws secretsmanager create-secret `
+  --name cloudtask/prod `
+  --description "Credenciais e config CloudTask" `
+  --secret-string $secret
 ```
 
 ### 8.2. Consumir no EKS — duas formas
@@ -597,9 +616,21 @@ initContainers:
         mountPath: /env
 ```
 
-> ⚠️ Em ambos os casos, o **pod precisa de IAM role** com permissão
-> `secretsmanager:GetSecretValue`. No Learner Lab usa `LabRole`; em produção
-> use **IRSA** (IAM Roles for Service Accounts).
+> 🔵 **Conta AWS real:** o caminho recomendado é a forma **(A) External Secrets
+> Operator** com **IRSA** (IAM Roles for Service Accounts): o pod assume uma IAM
+> role dedicada com `secretsmanager:GetSecretValue`. Requer um **OIDC provider**
+> registrado no cluster (`eksctl utils associate-iam-oidc-provider`) e uma role
+> ligada à ServiceAccount.
+>
+> 🟢 **AWS Academy (Learner Lab):** a forma (A) **não funciona** — criar o OIDC
+> provider e a role exige `iam:CreateOpenIDConnectProvider` / `iam:CreateRole`,
+> **bloqueados** para a `voclabs`. Use uma destas:
+> 1. **Forma (B), init container** acima — o pod usa a `LabRole` (que já tem
+>    acesso ao Secrets Manager) via instance profile dos nós. Mais simples,
+>    funciona no Lab.
+> 2. **Secret nativo do K8s** (`kubectl create secret generic ... --from-env-file`)
+>    em base64 — sem Secrets Manager. É o suficiente para a aula; apaga tudo no
+>    fim. Menos auditável, mas zero dependência de IAM.
 
 ### 8.3. Cleanup
 
@@ -636,16 +667,45 @@ kubectl get pods -n cloudtask -w
 
 ## 10. Semana 6 — DynamoDB para eventos
 
+> 🔵 **Conta AWS real:** `dynamodb:CreateTable` funciona; siga os passos abaixo.
+>
+> 🟢 **AWS Academy (Learner Lab):** o DynamoDB **pode estar bloqueado** ou com
+> limite de tabelas (`AccessDenied` em `dynamodb:CreateTable`). **Teste antes da
+> aula.** Se não funcionar, use o **fallback local** que a aplicação já suporta —
+> sem AWS nenhuma:
+>
+> ```
+> EVENT_STORE_MODE=local            # em vez de dynamodb
+> LOCAL_EVENTS_FILE=./local_events/events.json
+> ```
+>
+> Os eventos vão para um arquivo JSON (igual ao fallback local dos uploads). A
+> lição de "object/NoSQL store desacoplado da app" se mantém.
+
+Criar a tabela — a quebra de linha muda por shell (`\` no bash, `` ` `` no
+PowerShell):
+
+**Linux/macOS (bash):**
 ```bash
 # 1. criar tabela (PAY_PER_REQUEST = só paga por uso)
 aws dynamodb create-table \
   --table-name cloudtask-events \
-  --attribute-definitions \
-    AttributeName=id,AttributeType=S \
+  --attribute-definitions AttributeName=id,AttributeType=S \
   --key-schema AttributeName=id,KeyType=HASH \
   --billing-mode PAY_PER_REQUEST
+```
 
-# 2. esperar ativa
+**Windows (PowerShell):**
+```powershell
+aws dynamodb create-table `
+  --table-name cloudtask-events `
+  --attribute-definitions AttributeName=id,AttributeType=S `
+  --key-schema AttributeName=id,KeyType=HASH `
+  --billing-mode PAY_PER_REQUEST
+```
+
+```bash
+# 2. esperar ativa (igual nos dois shells)
 aws dynamodb wait table-exists --table-name cloudtask-events
 
 # 3. configurar no Secrets Manager (ou ConfigMap)
@@ -660,6 +720,9 @@ curl -X POST http://$ELB_DNS:8000/events \
 # 5. ver na tabela
 aws dynamodb scan --table-name cloudtask-events --max-items 5
 ```
+
+> 💡 No passo 4, no PowerShell a variável é `$env:ELB_DNS` (não `$ELB_DNS`) se
+> você a exportou via `$env:`. O `curl` real do Windows é `curl.exe`.
 
 **Cleanup:**
 
