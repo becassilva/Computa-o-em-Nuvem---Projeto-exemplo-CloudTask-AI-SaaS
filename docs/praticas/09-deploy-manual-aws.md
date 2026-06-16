@@ -819,6 +819,191 @@ aws ec2 describe-network-interfaces --network-interface-ids $env:ENI_ID `
 > aws ec2 replace-route --route-table-id $RT_ID --destination-cidr-block 0.0.0.0/0 --gateway-id $IGW_ID
 > ```
 
+---
+
+#### 4.2-AWS_PROPRIA — variante didática: 2 containers (API + Postgres) e a prova da perda de dados
+
+> **Continua do [§4.1-AWS_PROPRIA](#41-aws_propria--via-cli-apenas-conta-propria):**
+> reusa `$ACCOUNT_ID`, `$ECR`, a role `ecsTaskExecutionRole`, o cluster
+> `cloudtask-fargate`, o `$SUBNET_ID` e o `$SG_ID` já criados lá.
+>
+> **Objetivo:** o §4.1 sobe **só a API**; aqui ela ganha um **Postgres como
+> container ao lado** (mesma task) e a gente **prova na prática** por que
+> produção precisa de banco gerenciado (RDS) — o banco aqui é efêmero **de
+> propósito**.
+
+##### Por que isto é didático (e arriscado na vida real)
+
+| Risco | O que acontece |
+| --- | --- |
+| **Perda de dados** | Fargate **não tem disco persistente**. Restart da task → banco zerado. |
+| Sem backup | Nenhum snapshot automático. Acidente = recriação manual. |
+| Sem Multi-AZ | A AZ cair derruba API e banco juntos. |
+| Migração frágil | Cada restart roda `create_all` do zero, sem versionar schema. |
+
+O exercício existe para você **sentir** isso: subir → criar tarefas → forçar
+restart → constatar que sumiram → concluir que produção pede **RDS**
+([§7](#7-semana-68--trocar-postgres-por-rds)).
+
+##### Arquitetura
+
+```text
+   ┌──────────────────────────────────────────┐
+   │        ECS Fargate Task (1 task)          │
+   │  ┌──────────────┐      ┌───────────────┐  │
+   │  │ api          │◄────►│ db (postgres) │  │
+   │  │ uvicorn:8000 │      │ :5432         │  │
+   │  └──────────────┘      └───────────────┘  │
+   │   2 containers / 1 task → falam via localhost
+   └──────────────────────────────────────────┘
+                  │ Public IP :8000
+                  ▼ usuário
+```
+
+> 💡 No `DATABASE_URL` o host é `localhost:5432` porque os 2 containers
+> compartilham a mesma rede dentro da task Fargate.
+
+##### Passo 1 — registrar o task-def de 2 containers
+
+A task definition já está **versionada no repo**:
+[`infra/aws/task-def-fargate-api-db.json`](../../infra/aws/task-def-fargate-api-db.json)
+(api + Postgres, `dependsOn` db `HEALTHY`, healthCheck `pg_isready`). Os
+placeholders estão explicados em
+[`infra/aws/README.md`](../../infra/aws/README.md). Resolva-os e registre — a
+`family` é `cloudtask-api`, então isto vira **uma nova revisão**:
+
+**Linux/macOS (bash):**
+```bash
+# pre-req: $ACCOUNT_ID e $ECR exportados no §4.1-AWS_PROPRIA
+EXEC_ROLE="arn:aws:iam::${ACCOUNT_ID}:role/ecsTaskExecutionRole"
+sed -e "s|<ACCOUNT_ID>|${ACCOUNT_ID}|g" \
+    -e "s|EXEC_ROLE_ARN|${EXEC_ROLE}|g" \
+    -e "s|TASK_ROLE_ARN|${EXEC_ROLE}|g" \
+    -e "s|<TROQUE_SENHA_DB>|$(openssl rand -hex 16)|g" \
+    -e "s|<TROQUE_SECRET_KEY>|$(openssl rand -hex 32)|g" \
+    infra/aws/task-def-fargate-api-db.json > /tmp/task-def-apidb.json
+aws ecs register-task-definition --cli-input-json file:///tmp/task-def-apidb.json
+```
+
+**Windows (PowerShell):**
+```powershell
+# pre-req: $env:ACCOUNT_ID e $env:ECR definidos no §4.1-AWS_PROPRIA
+$exec   = "arn:aws:iam::$($env:ACCOUNT_ID):role/ecsTaskExecutionRole"
+$pgpass = -join ((1..32) | ForEach-Object { '{0:x}' -f (Get-Random -Maximum 16) })
+$skey   = -join ((1..64) | ForEach-Object { '{0:x}' -f (Get-Random -Maximum 16) })
+(Get-Content infra/aws/task-def-fargate-api-db.json) `
+  -replace '<ACCOUNT_ID>', $env:ACCOUNT_ID `
+  -replace 'EXEC_ROLE_ARN', $exec `
+  -replace 'TASK_ROLE_ARN', $exec `
+  -replace '<TROQUE_SENHA_DB>', $pgpass `
+  -replace '<TROQUE_SECRET_KEY>', $skey |
+  Set-Content "$env:TEMP\task-def-apidb.json" -Encoding ascii
+aws ecs register-task-definition --cli-input-json "file://$env:TEMP\task-def-apidb.json"
+```
+
+> 🔐 Aqui os segredos vão **em texto plano** na task def (didático, descartável).
+> Em produção real use **AWS Secrets Manager / SSM** e o campo `secrets` da
+> container definition — nunca segredo cru na task def.
+
+##### Passo 2 — apontar o service para a nova revisão
+
+```bash
+# bash e PowerShell são idênticos aqui (só chamadas 'aws')
+aws ecs update-service --cluster cloudtask-fargate --service cloudtask-api \
+  --task-definition cloudtask-api --force-new-deployment
+aws ecs wait services-stable --cluster cloudtask-fargate --services cloudtask-api
+```
+
+> Se você ainda **não** criou o service (pulou o §4.1), crie agora reusando
+> `$SUBNET_ID` e `$SG_ID` daquela seção:
+> ```bash
+> aws ecs create-service --cluster cloudtask-fargate --service-name cloudtask-api \
+>   --task-definition cloudtask-api --desired-count 1 --launch-type FARGATE \
+>   --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$SG_ID],assignPublicIp=ENABLED}"
+> ```
+
+##### Passo 3 — pegar o Public IP e testar
+
+**Linux/macOS (bash):**
+```bash
+TASK_ARN=$(aws ecs list-tasks --cluster cloudtask-fargate \
+  --service-name cloudtask-api --query 'taskArns[0]' --output text)
+ENI_ID=$(aws ecs describe-tasks --cluster cloudtask-fargate --tasks $TASK_ARN \
+  --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value | [0]" --output text)
+export PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID \
+  --query "NetworkInterfaces[0].Association.PublicIp" --output text)
+echo "API em http://$PUBLIC_IP:8000"
+curl http://$PUBLIC_IP:8000/health
+curl http://$PUBLIC_IP:8000/health/ready   # agora db=ok (tem Postgres ao lado)
+```
+
+**Windows (PowerShell):**
+```powershell
+$TASK_ARN = aws ecs list-tasks --cluster cloudtask-fargate --service-name cloudtask-api --query 'taskArns[0]' --output text
+$ENI_ID = aws ecs describe-tasks --cluster cloudtask-fargate --tasks $TASK_ARN --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value | [0]" --output text
+$env:PUBLIC_IP = aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID --query "NetworkInterfaces[0].Association.PublicIp" --output text
+echo "API em http://$($env:PUBLIC_IP):8000"
+curl.exe http://$($env:PUBLIC_IP):8000/health
+curl.exe http://$($env:PUBLIC_IP):8000/health/ready
+```
+
+##### Passo 4 — a prova da perda de dados
+
+**Linux/macOS (bash):**
+```bash
+# 1. criar 5 tarefas
+for i in 1 2 3 4 5; do
+  curl -sX POST http://$PUBLIC_IP:8000/tasks -H "Content-Type: application/json" \
+    -d "{\"title\":\"Tarefa Fargate #$i\",\"priority\":\"high\"}" >/dev/null
+done
+curl -s http://$PUBLIC_IP:8000/tasks | python -c "import sys,json;print(len(json.load(sys.stdin)))"
+# 5
+
+# 2. forçar restart (mata a task; o service sobe outra, SEM o disco antigo)
+aws ecs stop-task --cluster cloudtask-fargate --task $TASK_ARN \
+  --reason "demo perda de dados sem volume"
+aws ecs wait services-stable --cluster cloudtask-fargate --services cloudtask-api
+
+# 3. recapturar o IP (task nova = IP novo) e conferir
+TASK_ARN=$(aws ecs list-tasks --cluster cloudtask-fargate --service-name cloudtask-api --query 'taskArns[0]' --output text)
+ENI_ID=$(aws ecs describe-tasks --cluster cloudtask-fargate --tasks $TASK_ARN \
+  --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value | [0]" --output text)
+export PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID \
+  --query "NetworkInterfaces[0].Association.PublicIp" --output text)
+curl -s http://$PUBLIC_IP:8000/tasks | python -c "import sys,json;print(json.load(sys.stdin))"
+# []  ← as 5 tarefas sumiram
+```
+
+**Windows (PowerShell):**
+```powershell
+# 1. criar 5 tarefas
+1..5 | ForEach-Object {
+  curl.exe -sX POST http://$($env:PUBLIC_IP):8000/tasks -H "Content-Type: application/json" `
+    -d "{\"title\":\"Tarefa Fargate #$_\",\"priority\":\"high\"}" | Out-Null
+}
+(curl.exe -s http://$($env:PUBLIC_IP):8000/tasks | ConvertFrom-Json).Count
+# 5
+
+# 2. forcar restart
+aws ecs stop-task --cluster cloudtask-fargate --task $TASK_ARN --reason "demo perda de dados sem volume"
+aws ecs wait services-stable --cluster cloudtask-fargate --services cloudtask-api
+
+# 3. recapturar IP e conferir
+$TASK_ARN = aws ecs list-tasks --cluster cloudtask-fargate --service-name cloudtask-api --query 'taskArns[0]' --output text
+$ENI_ID = aws ecs describe-tasks --cluster cloudtask-fargate --tasks $TASK_ARN --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value | [0]" --output text
+$env:PUBLIC_IP = aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID --query "NetworkInterfaces[0].Association.PublicIp" --output text
+curl.exe -s http://$($env:PUBLIC_IP):8000/tasks
+# []  <- as 5 tarefas sumiram
+```
+
+> 🎯 **Demonstrado.** As 5 tarefas evaporaram: o `create_all` recria o schema
+> vazio, mas os dados não voltam. Em produção isso = clientes perdendo trabalho.
+> É exatamente o motivo de migrar para **RDS** ([§7](#7-semana-68--trocar-postgres-por-rds)).
+>
+> O **Cleanup Fargate** abaixo já cobre esta variante (mesmo service/cluster/SG).
+
+---
+
 **Cleanup Fargate:**
 
 ```bash
