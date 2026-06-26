@@ -82,10 +82,11 @@
     //  falha no /bin/sh=dash do Debian trixie. Instalamos Node via apt no
     //  Dockerfile (target dev). O `cdk` é instalado no post-create via npm.)
 
-    // kubectl (sem helm e sem minikube — não usamos). Aulas 6, 8, 9.
+    // kubectl + helm (sem minikube). kubectl: Aulas 6, 8, 9. helm: Aula 12 —
+    // instala o AWS Load Balancer Controller no EKS (cria ALBs a partir de Ingress).
     "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
       "version": "latest",
-      "helm": "none",
+      "helm": "latest",
       "minikube": "none"
     },
 

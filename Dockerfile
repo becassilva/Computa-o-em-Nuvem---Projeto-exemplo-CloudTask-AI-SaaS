@@ -140,10 +140,11 @@ FROM base AS dev
 #   postgresql-client  -> dá o `psql` para inspecionar o banco
 #   netcat-openbsd     -> dá o `nc` para testar conectividade (host:porta)
 #   iputils-ping       -> ping
+#   dnsutils           -> dá o `dig`/`nslookup` (verificar delegação DNS, Aula 12)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       sudo nodejs npm \
-      postgresql-client netcat-openbsd iputils-ping \
+      postgresql-client netcat-openbsd iputils-ping dnsutils \
  && rm -rf /var/lib/apt/lists/* \
  && echo "appuser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/appuser \
  && chmod 0440 /etc/sudoers.d/appuser
