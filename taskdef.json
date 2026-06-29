@@ -1,0 +1,31 @@
+﻿{
+    "memory":  "512",
+    "executionRoleArn":  "arn:aws:iam::783073279976:role/LabRole",
+    "networkMode":  "awsvpc",
+    "family":  "cloudtask-api",
+    "requiresCompatibilities":  [
+                                    "FARGATE"
+                                ],
+    "containerDefinitions":  [
+                                 {
+                                     "portMappings":  [
+                                                          {
+                                                              "protocol":  "tcp",
+                                                              "containerPort":  8000
+                                                          }
+                                                      ],
+                                     "logConfiguration":  {
+                                                              "logDriver":  "awslogs",
+                                                              "options":  {
+                                                                              "awslogs-region":  "us-east-1",
+                                                                              "awslogs-stream-prefix":  "ecs",
+                                                                              "awslogs-group":  "/ecs/cloudtask-api"
+                                                                          }
+                                                          },
+                                     "name":  "api",
+                                     "essential":  true,
+                                     "image":  "783073279976.dkr.ecr.us-east-1.amazonaws.com/cloudtask-api:v1"
+                                 }
+                             ],
+    "cpu":  "256"
+}
