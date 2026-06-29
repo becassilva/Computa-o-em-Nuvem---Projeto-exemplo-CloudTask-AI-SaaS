@@ -49,31 +49,31 @@ aws sts get-caller-identity
 
 ## 2. Caminho fácil: o script pronto
 
-O repositório traz `scripts/build-and-push-ecr.sh`, que faz **tudo** (cria o
+O repositório traz `scripts/semana-04-ecr/build-push-ecr.sh`, que faz **tudo** (cria o
 repo se faltar, login, build `--target prod`, tag, push):
 
 ```bash
 # da raiz do repo:
-./scripts/build-and-push-ecr.sh
+./scripts/semana-04-ecr/build-push-ecr.sh
 ```
 
 Variáveis opcionais (têm defaults):
 
 ```bash
-REGION=us-east-1 REPO=cloudtask-api TAG=latest ./scripts/build-and-push-ecr.sh
+REGION=us-east-1 REPO=cloudtask-api TAG=latest ./scripts/semana-04-ecr/build-push-ecr.sh
 
 # taggear com o SHA do commit (rastreável — boa prática de produção):
-TAG="$(git rev-parse --short HEAD)" ./scripts/build-and-push-ecr.sh
+TAG="$(git rev-parse --short HEAD)" ./scripts/semana-04-ecr/build-push-ecr.sh
 ```
 
 > Se der `Permission denied` ao rodar o script:
-> `chmod +x scripts/build-and-push-ecr.sh` e tente de novo.
+> `chmod +x scripts/semana-04-ecr/build-push-ecr.sh` e tente de novo.
 
 > 🪟 **Windows (PowerShell):** o script é **bash** e não roda direto no
 > PowerShell. Duas opções:
 > 1. Rode dentro do **devcontainer** (já tem bash) ou no **Git Bash/WSL**:
 >    ```bash
->    REGION=us-east-1 TAG=latest ./scripts/build-and-push-ecr.sh
+>    REGION=us-east-1 TAG=latest ./scripts/semana-04-ecr/build-push-ecr.sh
 >    ```
 > 2. Ou use os comandos **manuais em PowerShell** do [§3](#3-caminho-manual-entender-cada-comando) abaixo (fazem o mesmo, passo a passo).
 

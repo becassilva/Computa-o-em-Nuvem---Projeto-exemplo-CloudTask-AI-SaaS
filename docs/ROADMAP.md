@@ -146,7 +146,7 @@ infra/k8s/
 ### Aula 7 — ECR (`aula-07-final`)
 
 **Entregas**
-- `scripts/build-and-push-ecr.sh`.
+- `scripts/semana-04-ecr/build-push-ecr.sh`.
 - `docs/ecr-guide.md` (build, tag, push, AWS CLI, conceito de registry).
 
 **Objetivo didático:** levar a imagem da máquina local para a cloud.
@@ -176,7 +176,7 @@ infra/k8s/aws/
 
 **Entregas**
 - `infra/k8s/hpa.yaml`.
-- `scripts/load-test-simple.py`.
+- `scripts/semana-05-hpa/teste-carga.py`.
 - Docs: `docs/cost-explorer.md`, `docs/aws-pricing-notes.md`.
 
 **Objetivo didático:** elasticidade tem custo; introduzir billing.

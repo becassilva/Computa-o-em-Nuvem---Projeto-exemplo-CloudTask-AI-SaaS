@@ -298,7 +298,9 @@ Mostrar que arquivos **não devem ser armazenados dentro do container**. Apresen
   - **Modo S3:** faz `put_object` no bucket configurado.
 - [ ] Criar `app/api/routes_uploads.py` com:
   - `POST /uploads` — recebe `UploadFile`, devolve nome/URL.
-  - `GET /uploads/{filename}` — devolve o arquivo (modo local) ou pré-assinado (modo S3).
+  - `GET /uploads/{filename}` — baixa o arquivo. Param `?via=redirect|url|stream`:
+    `redirect` (default, 307 → URL pré-assinada no S3), `url` (JSON com a URL),
+    `stream` (API faz proxy dos bytes; funciona no Swagger, anti-padrão em prod).
 - [ ] Registrar o router em `app/main.py`.
 - [ ] Adicionar `local_uploads/` ao `.gitignore` (já está, confirme).
 - [ ] Criar `docs/conceitos/s3-efs-datalake.md` explicando, de forma didática:
@@ -349,7 +351,7 @@ Apresentar Kubernetes: pods, deployments, services, replicas e auto-healing. Rod
   - [ ] `configmap.yaml` — variáveis não-sensíveis.
   - [ ] `secret.example.yaml` — modelo de Secret (sem valores reais; o real fica fora do repo).
 - [ ] Construir a imagem localmente e carregá-la no cluster:
-  - Kind: `kind load docker-image cloudtask-api:dev --name cloudtask`
+  - Kind: `kind load docker-image cloudtask-api:prod --name cloudtask` (use o target `prod` — a imagem `dev` não embute o código, espera volume)
   - Minikube: `eval $(minikube docker-env)` antes do `docker build`.
 - [ ] Aplicar tudo: `kubectl apply -f infra/k8s/`.
 - [ ] Documentar no `infra/k8s/README.md`:
@@ -361,8 +363,8 @@ Apresentar Kubernetes: pods, deployments, services, replicas e auto-healing. Rod
 ### Comandos esperados
 ```bash
 kind create cluster --name cloudtask
-docker build -t cloudtask-api:dev .
-kind load docker-image cloudtask-api:dev --name cloudtask
+docker build --target prod -t cloudtask-api:prod .
+kind load docker-image cloudtask-api:prod --name cloudtask
 kubectl apply -f infra/k8s/
 kubectl get pods -n cloudtask
 kubectl port-forward -n cloudtask svc/cloudtask-api 8000:8000
@@ -403,13 +405,13 @@ Mostrar como a imagem Docker construída localmente é enviada para um **registr
   ```bash
   aws ecr create-repository --repository-name cloudtask-api --region us-east-1
   ```
-- [ ] Criar `scripts/build-and-push-ecr.sh` automatizando:
+- [ ] Criar `scripts/semana-04-ecr/build-push-ecr.sh` automatizando:
   1. `aws ecr get-login-password ... | docker login ...`
   2. `docker build -t cloudtask-api .`
   3. `docker tag cloudtask-api:latest <account>.dkr.ecr.<region>.amazonaws.com/cloudtask-api:latest`
   4. `docker push <account>.dkr.ecr.<region>.amazonaws.com/cloudtask-api:latest`
   - Variáveis `AWS_REGION` e `AWS_ACCOUNT_ID` devem vir do ambiente ou de argumentos.
-- [ ] Tornar o script executável (`chmod +x scripts/build-and-push-ecr.sh`).
+- [ ] Tornar o script executável (`chmod +x scripts/semana-04-ecr/build-push-ecr.sh`).
 - [ ] Criar `docs/ecr-guide.md` explicando:
   - O que é um container registry.
   - Diferenças entre Docker Hub e ECR.
@@ -512,7 +514,7 @@ Demonstrar **elasticidade** com Horizontal Pod Autoscaler, simular carga e relac
   - Métrica: CPU.
   - `minReplicas: 2`, `maxReplicas: 5`.
   - `averageUtilization: 60%`.
-- [ ] Criar `scripts/load-test-simple.py` usando `httpx` ou `requests`:
+- [ ] Criar `scripts/semana-05-hpa/teste-carga.py` usando `httpx` ou `requests`:
   - Dispara N requisições paralelas para `/health` ou `/tasks`.
   - Parâmetros via CLI: `--url`, `--concurrency`, `--duration`.
 - [ ] Aplicar o HPA e observar com:
@@ -530,7 +532,7 @@ Demonstrar **elasticidade** com Horizontal Pod Autoscaler, simular carga e relac
 
 ### Critérios de aceite
 - Sob carga, o HPA escala o Deployment de 2 → mais réplicas; ao cessar a carga, escala de volta.
-- `scripts/load-test-simple.py` roda com um único `python` (sem ferramentas externas obrigatórias).
+- `scripts/semana-05-hpa/teste-carga.py` roda com um único `python` (sem ferramentas externas obrigatórias).
 - Os dois documentos em `docs/` estão completos.
 
 ### Referências

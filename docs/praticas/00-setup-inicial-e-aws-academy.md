@@ -489,19 +489,50 @@ ou **`t3.medium`**. Nunca peça dezenas de nós — **2 nós bastam** para o cur
 
 ### 5.4 — CDK precisa de "bootstrap" (Aula 11)
 
-Antes do primeiro `cdk deploy`, rode uma vez:
+Antes do primeiro `cdk deploy`, rode o bootstrap **uma vez**. O `SEU_ACCOUNT_ID`
+vem do campo `Account` de `aws sts get-caller-identity` — pegue automaticamente:
+
+**Linux/macOS (bash):**
 ```bash
-cdk bootstrap aws://SEU_ACCOUNT_ID/us-east-1
+ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+cdk bootstrap "aws://$ACCOUNT/us-east-1"
 ```
-O `SEU_ACCOUNT_ID` aparece no resultado de `aws sts get-caller-identity`
-(campo `Account`). Se o bootstrap reclamar de permissão IAM, peça orientação —
-no Learner Lab pode ser necessário limitar as stacks a S3 + ECR.
+
+**Windows (PowerShell):**
+```powershell
+$ACCOUNT = aws sts get-caller-identity --query Account --output text
+cdk bootstrap "aws://$ACCOUNT/us-east-1"
+```
+
+> 🔵 **Conta AWS real:** o bootstrap cria uma stack CloudFormation com um bucket
+> S3 de artifacts + IAM roles de execução. Funciona direto (você tem
+> `iam:CreateRole`).
+>
+> 🟢 **AWS Academy (Learner Lab):** o bootstrap **costuma falhar** porque cria
+> IAM roles (`iam:CreateRole` é negado para a `voclabs`). A Aula 11 (CDK) é
+> **demonstrativa**: rode o `cdk synth` (gera o template, **não** provisiona) para
+> ver a infra como código, e deixe o `cdk deploy` para a **conta pessoal do
+> professor** (que pré-faz o bootstrap e mostra o deploy real). Não há workaround
+> de bootstrap dentro do Learner Lab.
+>
+> ```bash
+> cdk synth        # só gera o CloudFormation; seguro no Learner Lab
+> ```
 
 ### 5.5 — Cost Explorer demora a "ligar"
 
 Na Aula 9 usaremos o **Cost Explorer**. Ao habilitá-lo pela primeira vez, a AWS
 leva **até 24 horas** para começar a mostrar dados. **Ative no início da
 semana**, não na hora da aula.
+
+> 🔵 **Conta AWS real:** Cost Explorer + a API `ce:GetCostAndUsage` funcionam
+> normalmente.
+>
+> 🟢 **AWS Academy (Learner Lab):** o Cost Explorer **pode estar desabilitado**
+> ou a `voclabs` pode não ter `ce:GetCostAndUsage` (erro `AccessDenied`). Se não
+> abrir, use o **Billing Dashboard** (Console → Billing and Cost Management),
+> que sempre mostra o gasto acumulado da sessão — menos detalhado, mas suficiente
+> para a lição de custos. **Teste o acesso no primeiro dia do lab**, não na aula.
 
 ### 5.6 — As credenciais expiram
 

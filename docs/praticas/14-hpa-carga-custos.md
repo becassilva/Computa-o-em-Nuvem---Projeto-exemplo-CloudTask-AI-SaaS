@@ -67,14 +67,14 @@ kubectl get hpa -n cloudtask -w     # acompanha TARGETS e REPLICAS mudando
 ```bash
 LB=$(kubectl get svc cloudtask-api-lb -n cloudtask \
   -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-python scripts/load-test-simple.py --url http://$LB/tasks --concurrency 50 --duration 120
+python scripts/semana-05-hpa/teste-carga.py --url http://$LB/tasks --concurrency 50 --duration 120
 ```
 
 **Windows (PowerShell):**
 ```powershell
 $LB = kubectl get svc cloudtask-api-lb -n cloudtask `
   -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-python scripts/load-test-simple.py --url http://$LB/tasks --concurrency 50 --duration 120
+python scripts/semana-05-hpa/teste-carga.py --url http://$LB/tasks --concurrency 50 --duration 120
 ```
 
 **O que observar no Terminal A:**

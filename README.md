@@ -5,12 +5,11 @@
 
 <!-- Título e breve descrição do repositório -->
 <div align="center">
-  <h1>CloudTask AI SaaS</h1>
-  <p><b>Projeto-exemplo da disciplina <i>Computação em Nuvem</i> — N-CPU / UNINTER.</b></p>
-  <p>Um mini SaaS de gerenciamento de tarefas em <b>Python + FastAPI</b>, evoluído aula a aula até rodar em <b>AWS (ECR, EKS, S3, DynamoDB, CDK)</b>.</p>
+  <h1>CloudTask AI SaaS — Semana 6 (Aulas 11 e 12) — final da disciplina</h1>
+  <p><b>Branch <code>semana-06-cdk-final</code> — cobre as Aulas 11 e 12; consolida toda a jornada das 6 semanas.</b></p>
+  <p>API FastAPI + PostgreSQL + CRUD com <b>uploads S3/local</b>, <b>Kubernetes (Kind→EKS)</b>, <b>HPA</b> e <b>eventos (DynamoDB)</b> — agora fechando com <b>Infraestrutura como Código (AWS CDK)</b> (Aula 11) e os <b>materiais de entrega final</b> (Aula 12).</p>
 </div>
 
-<!-- Ícones ou links das tecnologias usadas -->
 <p align="center">
   <a href="https://www.python.org/" title="Python"><img src="https://github.com/get-icon/geticon/raw/master/icons/python.svg" alt="Python" height="21px"></a>
   +
@@ -20,73 +19,178 @@
   +
   <a href="https://www.postgresql.org/" title="PostgreSQL"><img src="https://github.com/get-icon/geticon/raw/master/icons/postgresql.svg" alt="PostgreSQL" height="21px"></a>
   +
-  <a href="https://kubernetes.io/" title="Kubernetes"><img src="https://github.com/get-icon/geticon/raw/master/icons/kubernetes.svg" alt="Kubernetes" height="21px"></a>
+  <a href="https://aws.amazon.com/s3/" title="Amazon S3">Amazon S3</a>
   +
-  <a href="https://aws.amazon.com/" title="AWS"><img src="https://github.com/get-icon/geticon/raw/master/icons/aws.svg" alt="AWS" height="21px"></a>
+  <a href="https://kubernetes.io/" title="Kubernetes">Kubernetes</a>
+  +
+  <a href="https://aws.amazon.com/ecr/" title="Amazon ECR">Amazon ECR</a>
+  +
+  <a href="https://aws.amazon.com/eks/" title="Amazon EKS">Amazon EKS</a>
+  +
+  <a href="https://aws.amazon.com/cdk/" title="AWS CDK">AWS CDK</a>
 </p>
 
-<!-- Escudos de licença e contador de contribuidores -->
-<p align="center">
-  <a href="https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/graphs/contributors">
-    <img src="https://img.shields.io/github/contributors/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS?color=%237159c1&logoColor=%237159c1&style=flat" alt="Contributors">
-  </a>
-  <a href="https://opensource.org/license/gpl-3-0">
-    <img src="https://img.shields.io/github/license/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS?color=%23BD0000" alt="License">
-  </a>
-</p>
+## O que foi feito nesta semana
 
-<!-- Descrição do repositório e demais dados -->
-## Descrição
+> 🎓 **Última semana da disciplina.** Esta branch parte do estado da Semana 5
+> (toda a base: CRUD, S3, Kind/EKS, HPA, DynamoDB) e fecha com **IaC** e a
+> **entrega final**. Versão da API: **`0.6.0`**.
 
-Este repositório contém o **projeto-exemplo da disciplina Computação em Nuvem** do curso de Análise e Desenvolvimento de Sistemas (ADS), N-CPU/UNINTER.
+### Aula 11 — Infraestrutura como Código (AWS CDK)
 
-O objetivo é construir, ao longo de **12 aulas (6 semanas)**, um pequeno **SaaS de gerenciamento de tarefas (CloudTask AI SaaS)** usando FastAPI, levando a aplicação de um simples `GET /health` local até um deploy completo em **AWS (ECR + EKS + S3 + DynamoDB)** com infraestrutura definida em **AWS CDK**.
+- `infra/cdk/` — descreve parte da infra como **Python versionado**:
+  - `app.py` + `cdk.json` — app CDK e as 3 stacks.
+  - `stacks/storage_stack.py` — bucket **S3** privado (criptografado + versionado).
+  - `stacks/ecr_stack.py` — repositório **ECR** `cloudtask-api` (scan + lifecycle).
+  - `stacks/network_stack.py` — **VPC** 2 AZs (opcional, `nat_gateways=0` = sem custo).
+- Fecha a evolução **console → CLI → script → IaC**.
+- Doc completo: [`docs/praticas/18-cdk-iac.md`](docs/praticas/18-cdk-iac.md)
+  (`cdk synth` grátis para a aula / Learner Lab; `deploy`/`destroy` em conta própria).
 
-O código é **incremental**: cada aula tem sua própria branch contendo apenas o que já foi visto até aquele momento. Isso permite que o aluno acompanhe a evolução sem ser exposto à solução final de uma só vez.
+### Aula 12 — Entrega final
 
-> Foco da disciplina: **Computação em Nuvem aplicada** — não DevOps avançado, não CI/CD profundo, não frontend.
+- `docs/entrega-final/` — materiais de consolidação:
+  - `final-architecture.md` — arquitetura final (as 6 semanas em um diagrama).
+  - `final-report-template.md` — template do relatório de entrega.
+  - `lgpd-checklist.md` — checklist LGPD + segurança.
+  - `deployment-checklist.md` — checklist de deploy + **limpeza de custos**.
 
-## Stack
+---
 
-- **Linguagem:** Python 3.11+
-- **Framework Web:** FastAPI
-- **Banco SQL:** PostgreSQL (via Docker)
-- **NoSQL / eventos:** DynamoDB (com fallback local em JSON)
-- **Object storage:** Amazon S3 (com fallback local em disco)
-- **Containers:** Docker + Docker Compose
-- **Orquestração:** Kubernetes (Kind/Minikube local → Amazon EKS)
-- **Registry:** Amazon ECR
-- **IaC:** AWS CDK (Python)
+### Base herdada das semanas 1–5 (resumo)
 
-## Roadmap por aula
+| Semana | Entregou |
+| -----: | --- |
+| 1 | FastAPI + Docker + devcontainer |
+| 2 | PostgreSQL + CRUD + `.env` + HTTPS (conceito) |
+| 3 | Uploads (S3/local) + Kubernetes local (Kind) |
+| 4 | Imagem no **ECR** + deploy no **EKS** |
+| 5 | **HPA** + custos + eventos (**DynamoDB**/JSON) |
 
-| Aula | Branch          | Tema                                  | Entrega principal                         |
-| ---: | :-------------- | :------------------------------------ | :---------------------------------------- |
-|    1 | `aula-01-final` | FastAPI mínimo                        | `GET /health`, `GET /`, estrutura inicial |
-|    2 | `aula-02-final` | Docker                                | `Dockerfile`, `docker-compose.yml`        |
-|    3 | `aula-03-final` | PostgreSQL + CRUD                     | SQLAlchemy, model `Task`, CRUD completo   |
-|    4 | `aula-04-final` | Config, segurança, VPC/IAM (conceito) | `.env`, `core/config.py`, docs AWS        |
-|    5 | `aula-05-final` | Uploads — S3 / local                  | `POST /uploads`, `s3_service.py`          |
-|    6 | `aula-06-final` | Kubernetes local                      | Manifests em `infra/k8s/` (Kind/Minikube) |
-|    7 | `aula-07-final` | ECR                                   | Script de build + push para ECR           |
-|    8 | `aula-08-final` | EKS                                   | Deploy + Service `LoadBalancer`           |
-|    9 | `aula-09-final` | Scaling e custos                      | HPA, teste de carga, docs Cost Explorer   |
-|   10 | `aula-10-final` | DynamoDB / logs / eventos             | `POST /events`, fallback JSON local       |
-|   11 | `aula-11-final` | AWS CDK                               | Stacks S3, ECR, VPC básica                |
-|   12 | `aula-12-final` | Entrega final                         | Documentação, checklist LGPD, arquitetura |
+Detalhes de cada entrega anterior nas práticas `docs/praticas/` (00–17) e no
+[`docs/ROADMAP.md`](docs/ROADMAP.md).
 
-Detalhes completos: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+<details>
+<summary><b>Detalhe das aulas anteriores (Semanas 3–4)</b></summary>
 
-Lista fixa das **12 tarefas** (espelha as Issues do GitHub, para consulta offline):
-[`docs/TAREFAS.md`](docs/TAREFAS.md).
+#### Aula 5 (revisão) — Upload de arquivos (Amazon S3 + fallback local)
 
-Exemplos didáticos de referência (Dockerfile, futuro: CDK, K8s, ...):
-[`exemplos/`](exemplos/).
+- `app/services/s3_service.py` — dois backends com a **mesma interface**:
+  - `LocalStorage` (default): grava em `LOCAL_UPLOADS_DIR` no container.
+  - `S3Storage`: envia para o bucket `S3_BUCKET_NAME` (boto3).
+  - `get_storage()` escolhe um ou outro a partir de `STORAGE_MODE`.
+- `app/api/routes_uploads.py`:
+  - `POST /uploads` — recebe `multipart/form-data`, devolve nome + URL.
+  - `GET /uploads/{filename}` — local serve do disco; S3 redireciona para URL pré-assinada.
+- Limite de **10 MB** por arquivo (config didática).
+- Nome de arquivo armazenado é **sanitizado** (sem `..`, com sufixo único) — evita path traversal.
+- `app/schemas.py` ganhou `UploadResponse` com exemplos no Swagger.
+- `app/core/config.py` ganhou `STORAGE_MODE`, `LOCAL_UPLOADS_DIR`, `AWS_REGION`, `S3_BUCKET_NAME`, `S3_ENDPOINT_URL` (opcional), `S3_PRESIGNED_URL_EXPIRES`.
+- Testes (`tests/test_uploads.py`): fluxo feliz, 404, 413, 422, extensão preservada.
+- `docs/conceitos/s3-efs-datalake.md` — guia didático S3 × EFS × Data Lake.
 
-## Como o aluno deve usar este repositório
+### Aula 6 (revisão) — Kubernetes local com Kind
 
-Guia rápido (passo a passo, comandos e pré-requisitos): [`docs/HOW_TO_USE.md`](docs/HOW_TO_USE.md).
+- `infra/k8s/` — manifests:
+  - `kind-config.yaml` — cluster Kind de 1 nó com porta `30080` mapeada para o host.
+  - `namespace.yaml` — namespace `cloudtask`.
+  - `configmap.yaml` — config não-sensível (hostname Postgres, STORAGE_MODE).
+  - `secret.example.yaml` — TEMPLATE; copie para `secret.yaml` (gitignored) e preencha.
+  - `postgres-deployment.yaml` + `postgres-service.yaml` — Postgres como Pod (sem volume — didático).
+  - `api-deployment.yaml` — 2 réplicas da API, init container espera Postgres, probes HTTP.
+  - `api-service.yaml` — NodePort `30080`.
+  - `kustomization.yaml` — `kubectl apply -k infra/k8s/` aplica tudo.
+- Roteiro passo a passo: [`docs/praticas/10-kubernetes-kind-local.md`](docs/praticas/10-kubernetes-kind-local.md).
+- **Kind roda no HOST** (não no devcontainer). `kubectl` funciona dos dois lados.
 
+Versão da API ao fim da semana: **`0.4.0`**.
+
+### Base herdada das semanas anteriores
+FastAPI + PostgreSQL + CRUD, config `.env`, HTTPS preparado, readiness probe,
+testes (transação + savepoint), docker-compose dev/prod/test, devcontainer com
+zsh + sticky scroll + transient prompt + AWS CLI, kubectl, eksctl, Node+CDK,
+docker-outside-of-docker.
+
+> Todo o código vem com **comentários didáticos** explicando motivo, impacto e
+> risco de cada decisão.
+
+</details>
+
+> Todo o código vem com **comentários didáticos** explicando motivo, impacto e
+> risco de cada decisão.
+
+## Endpoints
+
+| Método | Caminho               | Descrição |
+| ------ | --------------------- | --------- |
+| GET    | `/`                   | Metadados da aplicação. |
+| GET    | `/health`             | Liveness probe. |
+| GET    | `/health/ready`       | Readiness (checa o PostgreSQL). |
+| POST   | `/tasks`              | Criar tarefa (201). |
+| GET    | `/tasks`              | Listar (paginação `skip`/`limit`). |
+| GET    | `/tasks/{task_id}`    | Obter por id (404). |
+| PUT    | `/tasks/{task_id}`    | Atualizar parcial. |
+| DELETE | `/tasks/{task_id}`    | Remover (204). |
+| **POST** | **`/uploads`**          | **Enviar arquivo (multipart, 201)** |
+| **GET**  | **`/uploads/{filename}`** | **Baixar (200) ou redirect S3 (307)** |
+| GET    | `/docs`               | Swagger UI. |
+
+## Como rodar
+
+> ⚠️ **Ao mudar de semana (branch), faça REBUILD do devcontainer.**
+> A imagem do container é um snapshot congelado das dependências da branch em que
+> foi construída. Cada semana acrescenta libs novas em `requirements.txt` (ex.:
+> `boto3` na Semana 3, `kubernetes` na Semana 6, etc.). Sem rebuild, o `uvicorn`
+> vai quebrar com `ModuleNotFoundError` ao tentar importar uma lib que ainda não
+> foi instalada e o Swagger sai do ar.
+>
+> No VS Code: `F1` → **Dev Containers: Rebuild and Reopen in Container**.
+>
+> Para saber se precisa rebuild antes de trocar de branch:
+> ```bash
+> git diff <branch-atual> <branch-destino> -- requirements.txt requirements-dev.txt requirements-test.txt Dockerfile docker-compose.yml
+> ```
+> Se mostrar diff → rebuild. Entre **aulas da mesma semana**, geralmente código
+> apenas — não precisa rebuild.
+
+### Devcontainer (recomendado)
+`F1` → "Dev Containers: Reopen in Container". A API sobe sozinha em
+`http://localhost:8000/docs`.
+
+### Modo local (default — sem AWS)
+```bash
+# upload (qualquer arquivo)
+curl -F "file=@README.md" http://localhost:8000/uploads
+# resposta: {"filename":"abcd1234-...md","url":"/uploads/abcd...md","storage_mode":"local"}
+
+# download
+curl -O http://localhost:8000/uploads/abcd1234-...md
+```
+
+### Modo S3 (precisa de credenciais AWS)
+```bash
+# 1. criar bucket (uma vez)
+aws s3 mb s3://cloudtask-ai-saas-uploads-SEU-NOME --region us-east-1
+
+# 2. configurar .env
+echo "STORAGE_MODE=s3" >> .env
+echo "S3_BUCKET_NAME=cloudtask-ai-saas-uploads-SEU-NOME" >> .env
+
+# 3. recriar container e testar
+docker compose down && docker compose up -d
+curl -F "file=@README.md" http://localhost:8000/uploads
+# resposta agora traz URL pré-assinada do S3
+```
+
+## Testes
+
+```bash
+pytest -v
+```
+41 testes (5 novos de upload). Mode S3 não tem teste automatizado (depende de
+credenciais reais ou LocalStack); validar manualmente.
+
+## Como subir na AWS (resumo)
 > ⚠️ **Ao mudar de semana (branch), faça REBUILD do devcontainer.**
 > A imagem do container é um snapshot congelado das dependências da branch em
 > que foi construída. Cada semana acrescenta libs novas em `requirements.txt`.
@@ -109,18 +213,36 @@ instalação de todas as ferramentas e configuração do AWS Academy Learner Lab
 Resumo:
 
 ```bash
-# clonar
-git clone https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS.git
-cd Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS
+# 1. credenciais Learner Lab no host (~/.aws/credentials)
+aws sts get-caller-identity
 
-# trocar para a aula atual
-git checkout aula-01-final
+# 2. Aula 7 — publicar imagem no ECR
+./scripts/semana-04-ecr/build-push-ecr.sh
 
-# avançar para a próxima aula
-git fetch --all
-git checkout aula-02-final
+# 3. Aula 8 — cluster EKS (~15 min) + deploy
+eksctl create cluster --name cloudtask-eks --region us-east-1 \
+  --node-type t3.small --nodes 2 --managed
+kubectl apply -k infra/k8s/aws/
+kubectl get svc -n cloudtask api -w   # esperar o ELB ficar pronto
 ```
 
+> ⚠️ **Custo:** EKS cobra ~$0,10/h + 2 nós EC2 + ELB. **Sempre destrua ao fim:**
+> ```bash
+> kubectl delete -k infra/k8s/aws/
+> eksctl delete cluster --name cloudtask-eks --region us-east-1
+> ```
+
+Roteiros mastigados: [`docs/praticas/11-ecr-push.md`](docs/praticas/11-ecr-push.md) → [`docs/praticas/12-eks-deploy.md`](docs/praticas/12-eks-deploy.md).
+
+## Infra como Código (Aula 11) e entrega final (Aula 12)
+
+```bash
+# IaC com CDK (dentro de infra/cdk/) — synth é grátis (ótimo p/ aula)
+cd infra/cdk && pip install -r requirements.txt
+cdk synth                 # gera o CloudFormation sem criar nada
+cdk deploy --all          # (conta própria) cria S3 + ECR + VPC
+cdk destroy --all         # 🔥 apaga tudo
+```
 Cada branch `aula-XX-final` contém **somente o estado acumulado até aquela aula** e funciona de forma independente.
 
 ## Participantes
@@ -160,8 +282,34 @@ cloudtask-ai-saas/
 
 Se você tiver alguma sugestão, correção de bugs ou melhorias para este projeto didático, sinta-se à vontade para abrir uma issue ou enviar uma pull request. Sua contribuição é muito bem-vinda!
 
-Como este repositório é usado em sala de aula, mantenha o código simples, didático e bem comentado, alinhado ao objetivo pedagógico de cada aula.
+Entrega final: preencha [`docs/entrega-final/final-report-template.md`](docs/entrega-final/final-report-template.md)
+e rode os checklists de [LGPD](docs/entrega-final/lgpd-checklist.md) e
+[deploy/custos](docs/entrega-final/deployment-checklist.md).
+
+## Fim da disciplina 🎓
+
+Esta é a **última semana**. A consolidação está em
+[`docs/entrega-final/final-architecture.md`](docs/entrega-final/final-architecture.md)
+(as 6 semanas em um diagrama) e no [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+## Referências
+
+- Issues da semana: [#11 — Aula 11 (CDK)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/11) · [#12 — Aula 12 (final)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/12)
+- **CDK / IaC (Aula 11)**: [`docs/praticas/18-cdk-iac.md`](docs/praticas/18-cdk-iac.md) + stacks em `infra/cdk/`
+- **Entrega final (Aula 12)**: [`docs/entrega-final/`](docs/entrega-final/README.md)
+- 📜 **Scripts (mapa por semana)**: [`scripts/README.md`](scripts/README.md)
+- Lista de tarefas: [`docs/TAREFAS.md`](docs/TAREFAS.md)
+- Setup do zero: [`docs/praticas/00-setup-inicial-e-aws-academy.md`](docs/praticas/00-setup-inicial-e-aws-academy.md)
+- **ECR**: [`docs/praticas/11-ecr-push.md`](docs/praticas/11-ecr-push.md) + `scripts/semana-04-ecr/build-push-ecr.sh` + `buildspec.yml`
+- **EKS**: [`docs/praticas/12-eks-deploy.md`](docs/praticas/12-eks-deploy.md) + manifests em `infra/k8s/aws/`
+- **Kubernetes Kind (Aula 6)**: [`docs/praticas/10-kubernetes-kind-local.md`](docs/praticas/10-kubernetes-kind-local.md) + manifests em `infra/k8s/`
+- **S3 (Aula 5)**: [`docs/conceitos/s3-efs-datalake.md`](docs/conceitos/s3-efs-datalake.md)
+- **Roteiro Aula 3+4 (semanas combinadas)**: [`docs/praticas/13-roteiro-aula-semanas-3-e-4.md`](docs/praticas/13-roteiro-aula-semanas-3-e-4.md)
+- **Stack AWS por semana** (custos, Postgres container × RDS, ECS × EKS): [`docs/conceitos/infra-aws-minima-por-semana.md`](docs/conceitos/infra-aws-minima-por-semana.md)
+- **Deploy manual AWS** (ECR, Fargate, EKS, RDS, Secrets Manager, CodeBuild): [`docs/praticas/09-deploy-manual-aws.md`](docs/praticas/09-deploy-manual-aws.md)
+- Segurança: [`docs/conceitos/security-model.md`](docs/conceitos/security-model.md) · [`docs/conceitos/aws-networking.md`](docs/conceitos/aws-networking.md) · [`docs/conceitos/https-tls.md`](docs/conceitos/https-tls.md)
+- Docker: [`docs/conceitos/docker-explained.md`](docs/conceitos/docker-explained.md)
 
 ## Licença
 
-Este projeto está licenciado sob a [GNU General Public License v3.0](LICENSE).
+[GNU General Public License v3.0](LICENSE).

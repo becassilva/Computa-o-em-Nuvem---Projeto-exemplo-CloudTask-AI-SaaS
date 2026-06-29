@@ -138,7 +138,7 @@ kubectl get nodes               # se já tiver cluster EKS conectado
 **Faça:** [`11-ecr-push.md`](11-ecr-push.md).
 
 ```bash
-./scripts/build-and-push-ecr.sh
+./scripts/semana-04-ecr/build-push-ecr.sh
 aws ecr list-images --repository-name cloudtask-api --output table
 ```
 
